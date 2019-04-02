@@ -1,2 +1,3 @@
 (executable
- (name spice))
+ (name spice)
+ (libraries base stdio))
