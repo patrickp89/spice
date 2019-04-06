@@ -1,0 +1,55 @@
+digraph G {
+    root     -> e
+    root     -> c
+
+    e        -> invis_02 [style=invis]
+    e        -> e2
+    e2       -> e20
+    e2       -> invis_03 [style=invis]
+    e20      -> e206
+    e206     -> e2065
+    e206     -> invis_05 [style=invis]
+    e2065    -> invis_06 [style=invis]
+    e2065    -> e20653
+    e20653   -> leaf01
+
+    c        -> c7
+    c7       -> c78
+    c78      -> c780
+    c780     -> c7808
+    c7808    -> c7808a
+    c7808a   -> leaf02
+
+    c78      -> c78x
+    c78x     -> c78xy
+    c78xy    -> c78xyz
+    c78xyz   -> leaf03
+
+    e [label="e"];
+    e2 [label="2"];
+    e20 [label="0"];
+    e206   [label="6"];
+    e2065  [label="5"];
+    e20653 [label="3"];
+    leaf01 [label="/path/to/my/file.one"];
+
+    c [label="c"];
+    c7 [label="7"];
+    c78 [label="8"];
+    c780 [label="0"];
+    c7808 [label="8"];
+    c7808a [label="a"];
+    leaf02 [label="/yet/another/file.two"];
+
+    c78x [label="x"];
+    c78xy [label="y"];
+    c78xyz [label="z"];
+    leaf03 [label="/path/to/another/file.three"];
+
+    root     [label=" "];
+    invis_01 [style=invis];
+    invis_02 [style=invis];
+    invis_03 [style=invis];
+    invis_05 [style=invis];
+    invis_06 [style=invis];
+}

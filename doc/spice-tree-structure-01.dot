@@ -1,0 +1,37 @@
+digraph G {
+    root     -> e
+    root     -> invis_01 [style=invis]
+
+    e        -> invis_02 [style=invis]
+    e        -> e2
+    e2       -> e20
+    e2       -> invis_03 [style=invis]
+    e20      -> invis_04 [style=invis]
+    e20      -> e206
+    e206     -> e2065
+    e206     -> invis_05 [style=invis]
+    e2065    -> invis_06 [style=invis]
+    e2065    -> e20653
+    e20653   -> leaf01
+    e20653   -> invis_07 [style=invis]
+
+    invis_01 -> invis_08 [style=invis]
+
+    e [label="e"];
+    e2 [label="2"];
+    e20 [label="0"];
+    e206   [label="6"];
+    e2065  [label="5"];
+    e20653 [label="3"];
+    leaf01 [label="/path/to/my/file.one"];
+
+    root     [label=" "];
+    invis_01 [style=invis];
+    invis_02 [style=invis];
+    invis_03 [style=invis];
+    invis_04 [style=invis];
+    invis_05 [style=invis];
+    invis_06 [style=invis];
+    invis_07 [style=invis];
+    invis_08 [style=invis];
+}

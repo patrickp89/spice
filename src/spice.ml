@@ -8,23 +8,26 @@ open Stdio*)
 
 type 'a tree =
   | Leaf
-  | Node of 'a * 'a tree * 'a tree ;;
-
-
-(* TODO: the insert function must insert the _hash_ _lexicographically_! *)
-let rec insert t x =
-  match t with
-  | Leaf -> Node(x, Leaf, Leaf)
-  | Node(y, l, r) ->
-      if x = y then t
-      else if x < y then Node(y, (insert l x), r)
-      else Node(y, l, (insert r x))
+  | Node of 'a * list 'a tree ;; (* TODO: each node has n children -> List<Tree>! *)
 
 
 let rec size t =
   match t with
   | Leaf -> 0
   | Node (_, l, r) -> 1 + (size l) + (size r)
+
+
+let rec insert_hash t h =
+  print_endline "inserting:" ;
+  print_endline h ;
+  print_endline "its length is:" ;
+  print_endline (string_of_int (String.length h)) ;
+  match t with
+  | Leaf -> Node(x, [])
+  | Node(y, l, r) ->
+      if x = y then t (* TODO: ... *)
+      else if x < y then Node(y, (insert l x), r)
+      else Node(y, l, (insert r x))
 
 
 (* Logs the concatenated string (u +...+ v) to stdout. *)
@@ -43,20 +46,24 @@ let calculate_hash_for_file f =
 
 
 (* Calculates an MD5 hash sum for a given file f and inserts the hash into the given tree t. *)
-let calculate_and_insert_hash_into_t f t =
+let calculate_and_insert_hash_into_tree f t =
+  print_endline " \n" ; (* TODO: erase! *)
   log ["md5sum("; f; ")"] ;
   let h = calculate_hash_for_file f in
-  log [f; h] ;
-  (* TODO: insert the hash 'insert t h ;' *)
-  log ["Tree has "; string_of_int (size t); " nodes"] ;;
+  log [f; ": "; h] ;
+  let t = insert_hash_chars t h in
+  log ["Tree has "; string_of_int (size t); " nodes"] ;
+  t ;;
 
 
 (* Places the MD5 hash sum for file f in directory d into the tree t of MD5 sums. Returns the new tree. *)
 let handle_file d f t =
   let p = full_path d f in
   if not (Sys.is_directory p)
-  then calculate_and_insert_hash_into_t p t
-  else log [p; " is a directory!"] ;; (* TODO; recursive descent! *)
+  then calculate_and_insert_hash_into_tree p t
+  else begin
+  log [p; " is a directory!"] ;
+  t end ;; (* TODO; recursive descent! *)
 
 
 (* Reads all files and folders in d. *)
@@ -64,15 +71,20 @@ let files_in_dir d =
   Sys.readdir d ;;
 
 
-(* Prints all files and folders in d. *)
-let print_files_in_dir d =
+(* Computes a Spice tree from all files and folders in d. *)
+let compute_tree_from_files_in_dir d =
   log [d; ":"] ;
-  let t = Leaf in
-  (* TODO: insert a root -> 'insert t d ;' *)
-  Array.iter (fun f -> (handle_file d f t)) (files_in_dir d) ;;
+  let t = Leaf in (* TODO: insert an [arbitrary?] root! *)
+  Array.iter (fun f -> (let t = (handle_file d f t))) (files_in_dir d) ;;
+
+
+(* Prints a tree... *)
+let print_tree t =
+  log ["Tree has "; string_of_int (size t); " nodes"] ;; (* TODO: print it! *)
 
 
 (* Main method. *)
 let () =
-  let dir = "/tmp/" in
-  print_files_in_dir dir ;;
+  let dir = "/tmp/" (* TODO: get from command line... *)
+  and spice_tree = compute_tree_from_files_in_dir dir in
+  print_tree spice_tree ;; (* TODO: traverse the tree instead, and print all _duplicates_!*)
