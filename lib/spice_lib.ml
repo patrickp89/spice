@@ -11,7 +11,7 @@ type 'a tree =
 
 (* Creates a new Spice tree. *)
 let createNewSpicyTree =
-  Leaf (* TODO: Node("", []) instead! *)
+  Node("", [])
 
 
 (* Calculates how many nodes are in a given Spice tree. *)
@@ -36,12 +36,11 @@ let exists_child_with_value_x t x =
 
 
 let find_child_with_matching_value t x =
-  print_endline ("searching for: " ^ x) ; (* TODO: erase!*)
   match t with
   | Leaf -> None
   | Node(_ , children) -> begin
     let children_with_matching_value = (List.filter (fun c -> node_value_matches_x c x) children) in
-    print_endline ("searching for: " ^ string_of_int (List.length children_with_matching_value)) ; (* TODO: erase!*)
+    (*let l = string_of_int (List.length children_with_matching_value) in*)
     (* TODO: if length of 'children_with_matching_value' is > 1, raise an exception! *)
     Some (List.hd children_with_matching_value)
     end
@@ -59,27 +58,31 @@ let rec insert_hash t h =
   print_endline ("inserting: " ^ h) ;
   if (String.length h) > 0 then begin
     let h2 = String.sub h 1 ((String.length h) - 1) in
-    print_endline ("h2 is: " ^h2) ;
     let c0 = String.sub h 0 1 in
-    print_endline ("h's first char is: " ^ c0) ;
     match t with
     (* if the node is a leaf, but we have a hash character to insert, we simply create a new node: *)
-    | Leaf -> begin print_endline ("  t is a leaf!"); Node(c0, [ (insert_hash Leaf h2) ]) end
+    | Leaf -> Node(c0, [ (insert_hash Leaf h2) ])
     (* otherwise, search its children for a matching child: *)
-    | Node(_ , _) -> begin
+    | Node(v , children) -> begin
       match (exists_child_with_value_x t c0) with
       (* there is a node with value hash[0] among the children: *)
       | true -> begin
         match (find_child_with_matching_value t c0) with
         | None -> raise (NodeHasNoChildren "This node was a leaf: this should not be possible here!") (* TODO: use a result type instead! *)
-        | Some q -> begin print_endline ("  Found a child with value '" ^ c0 ^ "'"); insert_hash q h2 end
+        | Some q -> begin
+          print_endline ("  Found a child with value '" ^ c0 ^ "'"); (* TODO: erase! *)
+          let newQ = insert_hash q h2 in
+          let newChildren = List.map (fun c -> if c = q then newQ else c) children in
+          Node(v, newChildren)
+          end
         end
       (* there is no node with the char, create one: *)
       | false -> begin
-        print_endline ("  I didn't find a child with value '" ^ c0 ^ "'!") ;
-        Node(c0, [ (insert_hash Leaf h2) ])
+        print_endline ("  I didn't find a child with value '" ^ c0 ^ "'!") ; (* TODO: erase! *)
+        let newChildren = Node(c0, [ (insert_hash Leaf h2) ]) :: children in
+        Node(v, newChildren)
         end
-      end ;
+      end
   end
   else begin
   (* TODO: a file name as a leaf! *)
@@ -89,7 +92,12 @@ let rec insert_hash t h =
 
 (* Calculates an MD5 hash sum for a file with the full path f. *)
 let calculate_hash_for_file f =
-  Digest.to_hex(Digest.file f)
+  Digest.to_hex (Digest.file f)
+
+
+(* Traverses the Spice tree and identifies duplicate files. *)
+let identify_duplicate_files t =
+  [ (string_of_int (size t)) ] (* TODO: this is just a dummy placeholder! traverse the tree instead and find all duplicates! *)
 
 
 (* Tests: *)
@@ -145,3 +153,11 @@ let%expect_test "a leaf does not contain a certain value" =
   let t = Leaf in
   print_string (string_of_bool (exists_child_with_value_x t "def")) ;
   [%expect {| false |}]
+
+
+let%expect_test "insert a single hash" =
+  let r = createNewSpicyTree in
+  let h = "368886bdc82fff1d6f8376b482ac9666" in
+  let t = insert_hash r h in
+  print_int (size t) ; (* TODO: this test fails due to the many println's! how to circumvent this?? *)
+  [%expect {| 34 |}]
