@@ -4,9 +4,9 @@
 
 
 (* A tree structure, where each node has n children. *)
-type 'a tree =
-  | Leaf (* TODO: of 'b -> the abs. file path! *)
-  | Node of 'a * ('a tree list)
+type ('a, 'b) tree =
+  | Leaf of 'b
+  | Node of 'a * (('a, 'b) tree list)
 
 
 (* Creates a new Spice tree. *)
@@ -17,33 +17,38 @@ let createNewSpicyTree =
 (* Calculates how many nodes are in a given Spice tree. *)
 let rec size t =
   match t with
-  | Leaf -> 1
+  | Leaf _ -> 1
   | Node (_, children) -> 1 + (List.fold_left (fun acc x -> acc + (size x)) 0 children)
 
 
 (* Checks, whether the value of a node equals x. *)
 let node_value_matches_x t x =
   match t with
-  | Leaf -> false
+  | Leaf _ -> false
   | Node(v, _) -> ((compare v x) = 0)
 
 
 (* Checks, whether a node has a child with value x. *)
 let exists_child_with_value_x t x =
   match t with
-  | Leaf -> false
+  | Leaf _ -> false
   | Node(_ , children) -> (List.exists (fun c -> node_value_matches_x c x) children)
 
 
+(* Searches among all of t's children, whether one with the given value x exists. Returns that child or None. *)
 let find_child_with_matching_value t x =
   match t with
-  | Leaf -> None
+  | Leaf _ -> None
   | Node(_ , children) -> begin
-    let children_with_matching_value = (List.filter (fun c -> node_value_matches_x c x) children) in
-    (*let l = string_of_int (List.length children_with_matching_value) in*)
-    (* TODO: if length of 'children_with_matching_value' is > 1, raise an exception! *)
-    Some (List.hd children_with_matching_value)
+    match (exists_child_with_value_x t x) with (* TODO: check (List.length children)>0 and (...filter)>0 instead, if List.length is O(1)! *)
+    | true -> begin
+      let children_with_matching_value = (List.filter (fun c -> node_value_matches_x c x) children) in
+      (*let l2 = string_of_int (List.length children_with_matching_value) in*)
+      (* TODO: if length of 'children_with_matching_value' is > 1, raise an exception! *)
+      Some (List.hd children_with_matching_value)
     end
+    | false -> None
+  end
 
 
 (* A custom exception: to be used when a node that should be present was not found. *)
@@ -54,40 +59,36 @@ exception NodeHasNoChildren of string (* TODO: erase, once ResultType-refactorin
 
 
 (* Inserts a new hash h into a given Spice tree t. *)
-let rec insert_hash t h =
-  print_endline ("inserting: " ^ h) ;
+let rec insert_hash t h f =
   if (String.length h) > 0 then begin
     let h2 = String.sub h 1 ((String.length h) - 1) in
     let c0 = String.sub h 0 1 in
     match t with
     (* if the node is a leaf, but we have a hash character to insert, we simply create a new node: *)
-    | Leaf -> Node(c0, [ (insert_hash Leaf h2) ])
+    | Leaf _ -> Node(c0, [ (insert_hash (Leaf(f)) h2 f) ]) (* TODO: we should rather NOT use Leaf() but a node...?! *)
+
     (* otherwise, search its children for a matching child: *)
     | Node(v , children) -> begin
-      match (exists_child_with_value_x t c0) with
-      (* there is a node with value hash[0] among the children: *)
-      | true -> begin
-        match (find_child_with_matching_value t c0) with
-        | None -> raise (NodeHasNoChildren "This node was a leaf: this should not be possible here!") (* TODO: use a result type instead! *)
-        | Some q -> begin
-          print_endline ("  Found a child with value '" ^ c0 ^ "'"); (* TODO: erase! *)
-          let newQ = insert_hash q h2 in
-          let newChildren = List.map (fun c -> if c = q then newQ else c) children in
-          Node(v, newChildren)
-          end
-        end
+      match (find_child_with_matching_value t c0) with
       (* there is no node with the char, create one: *)
-      | false -> begin
+      | None ->  begin
         print_endline ("  I didn't find a child with value '" ^ c0 ^ "'!") ; (* TODO: erase! *)
-        let newChildren = Node(c0, [ (insert_hash Leaf h2) ]) :: children in
+        let newChildren = Node(c0, [ (insert_hash (Leaf(f)) h2 f) ]) :: children in (* TODO: we should rather NOT use Leaf() but a node...?! *)
         Node(v, newChildren)
-        end
       end
+      (* there is a node with value hash[0] among the children: *)
+      | Some matchingChild -> begin
+        print_endline ("  Found a child with value '" ^ c0 ^ "'"); (* TODO: erase! *)
+        let mcwih = insert_hash matchingChild h2 f in
+        let newChildren = List.map (fun c -> if c = matchingChild then mcwih else c) children in
+        Node(v, newChildren)
+      end
+    end
   end
   else begin
-  (* TODO: a file name as a leaf! *)
-  t
-  end;;
+    (* TODO: a file name as a leaf! *)
+    t
+  end
 
 
 (* Calculates an MD5 hash sum for a file with the full path f. *)
@@ -102,7 +103,7 @@ let identify_duplicate_files t =
 
 (* Tests: *)
 let%expect_test "tree size test with leaf only" =
-  let t = Leaf in
+  let t = Leaf("a") in
   print_int (size t) ;
   [%expect {| 1 |}]
 
@@ -114,23 +115,23 @@ let%expect_test "tree size test with single node" =
 
 
 let%expect_test "tree size test with node and leaves" =
-  let t = Node("root", [ Leaf; Leaf; Leaf; Leaf ]) in
+  let t = Node("root", [ Leaf("a"); Leaf("b"); Leaf("c"); Leaf("d") ]) in
   print_int (size t) ;
   [%expect {| 5 |}]
 
 
 let%expect_test "tree size test with multiple layers of nodes and leaves" =
   let t = Node("parent",
-    [ Node("child one", [ Node("grandchild", [ Leaf ]) ]);
-      Node("child two", [ Leaf ]) ]) in
+    [ Node("child one", [ Node("grandchild", [ Leaf("a") ]) ]);
+      Node("child two", [ Leaf("b") ]) ]) in
   print_int (size t) ;
   [%expect {| 6 |}]
 
 
 let%expect_test "node does not have a child with a certain value" =
   let t = Node("parent",
-    [ Node("abc", [ Node("def", [ Leaf ]) ]);
-      Node("ghi", [ Leaf ]) ]) in
+    [ Node("abc", [ Node("def", [ Leaf("a") ]) ]);
+      Node("ghi", [ Leaf("b") ]) ]) in
   print_string (string_of_bool (exists_child_with_value_x t "xyz")) ;
   [%expect {| false |}]
 
@@ -143,21 +144,20 @@ let%expect_test "node has a child with a certain value" =
 
 let%expect_test "node does not have a child with a certain value (but a child has)" =
   let t = Node("parent",
-    [ Node("abc", [ Node("def", [ Leaf ]) ]);
-      Node("ghi", [ Leaf ]) ]) in
+    [ Node("abc", [ Node("def", [ Leaf("a") ]) ]);
+      Node("ghi", [ Leaf("b") ]) ]) in
   print_string (string_of_bool (exists_child_with_value_x t "def")) ;
   [%expect {| false |}]
 
 
 let%expect_test "a leaf does not contain a certain value" =
-  let t = Leaf in
+  let t = Leaf("a") in
   print_string (string_of_bool (exists_child_with_value_x t "def")) ;
   [%expect {| false |}]
 
 
-let%expect_test "insert a single hash" =
+let%test "insert a single hash" =
   let r = createNewSpicyTree in
   let h = "368886bdc82fff1d6f8376b482ac9666" in
-  let t = insert_hash r h in
-  print_int (size t) ; (* TODO: this test fails due to the many println's! how to circumvent this?? *)
-  [%expect {| 34 |}]
+  let t = insert_hash r h "filename.ext" in
+  size t = 34 (* TODO: use an expectation test instead? (Get rid of unnecessary output first!) *)

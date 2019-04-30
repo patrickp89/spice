@@ -21,7 +21,7 @@ let calculate_and_insert_hash_into_tree f t =
   log ["md5sum("; f; ")"] ;
   let h = calculate_hash_for_file f in
   log [f; ": "; h] ;
-  let t = insert_hash t h in
+  let t = insert_hash t h f in
   log ["[calcula...] Tree has "; string_of_int (size t); " node(s)"] ;
   t
 
