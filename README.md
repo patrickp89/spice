@@ -51,11 +51,18 @@ Install [OPAM](https://opam.ocaml.org/doc/Install.html), on Debian run:
 ```bash
 # apt-get install opam
 ```
+
 Then install dune and Jane Street's expectation-test library via OPAM by running:
 ```bash
 $ opam install dune ppx_expect
 ```
+
 Clone or download this repository, and build by running
 ```bash
 $ dune build bin/spice.exe
+```
+
+You can run all tests via
+```bash
+$ dune runtest
 ```

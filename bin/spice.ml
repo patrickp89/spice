@@ -5,11 +5,6 @@
 open Spice_lib
 
 
-(* Logs the concatenated string (u +...+ v) to stdout. *)
-let log args =
-  print_endline (String.concat "" args)
-
-
 (* Concatenates a directory name d and a filename f. *)
 let full_path d f =
   String.concat "" [d; f]
