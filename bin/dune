@@ -1,3 +1,3 @@
 (executable
  (name spice)
- (libraries spice_lib))
+ (libraries core spice_lib))

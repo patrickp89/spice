@@ -2,9 +2,10 @@
 * Calculates MD5 hash sums for all files in a given directory.
 *)
 
+(*open Core*)
 
 (* Logs the concatenated string (u +...+ v) to stdout. *)
-let log args =
+let logg args =
   print_endline (String.concat "" args)
 
 (* A tree structure, where each node has n children. *)
@@ -19,10 +20,10 @@ let createNewSpicyTree =
 
 
 (* Calculates how many nodes are in a given Spice tree. *)
-let rec size t =
+let rec tree_size t =
   match t with
   | Leaf _ -> 1
-  | Node (_, children) -> 1 + (List.fold_left (fun acc x -> acc + (size x)) 0 children)
+  | Node (_, children) -> 1 + (List.fold_left (fun acc x -> acc + (tree_size x)) 0 children)
 
 
 (* Checks, whether the value of a node equals x. *)
@@ -137,9 +138,9 @@ let rec identify_duplicate_files (t: (string, string) spice_tree) : string list 
   | Node (x, children) -> begin
     if (children_are_leaves children) then begin
       if ((List.length children) > 1) then begin
-        log ["I'm node '..."; x; "' and I have duplicate children:"];
+        logg ["I'm node '..."; x; "' and I have duplicate children:"];
       let leaves_as_string = (List.rev_map (fun c -> (node_to_string c)) children) in
-      (List.iter (fun c -> (log [" -> "; c])) leaves_as_string);
+      (List.iter (fun c -> (logg [" -> "; c])) leaves_as_string);
       leaves_as_string
       end
       else begin
@@ -155,19 +156,19 @@ let rec identify_duplicate_files (t: (string, string) spice_tree) : string list 
 (* Tests: *)
 let%expect_test "tree size test with leaf only" =
   let t = Leaf("a") in
-  print_int (size t) ;
+  print_int (tree_size t) ;
   [%expect {| 1 |}]
 
 
 let%expect_test "tree size test with single node" =
   let t = Node("parent", [ Node("child one", []); Node("child two", []) ]) in
-  print_int (size t) ;
+  print_int (tree_size t) ;
   [%expect {| 3 |}]
 
 
 let%expect_test "tree size test with node and leaves" =
   let t = Node("root", [ Leaf("a"); Leaf("b"); Leaf("c"); Leaf("d") ]) in
-  print_int (size t) ;
+  print_int (tree_size t) ;
   [%expect {| 5 |}]
 
 
@@ -175,7 +176,7 @@ let%expect_test "tree size test with multiple layers of nodes and leaves" =
   let t = Node("parent",
     [ Node("child one", [ Node("grandchild", [ Leaf("a") ]) ]);
       Node("child two", [ Leaf("b") ]) ]) in
-  print_int (size t) ;
+  print_int (tree_size t) ;
   [%expect {| 6 |}]
 
 
@@ -211,7 +212,7 @@ let%test "insert a single hash" =
   let r = createNewSpicyTree in
   let h = "368886bdc82fff1d6f8376b482ac9678" in
   let t = insert_hash r h "filename.ext" in
-  size t = 34 (* 34 = 1 root + 32 nodes + 1 leaf *) (* TODO: use an expectation test instead? (Get rid of unnecessary output first!) *)
+  tree_size t = 34 (* 34 = 1 root + 32 nodes + 1 leaf *)
 
 
 let%test "insert hash twice" =
@@ -219,7 +220,7 @@ let%test "insert hash twice" =
   let h = "368886bdc82fff1d6f8376b482ac9666" in
   let t = insert_hash r h "filename.ext" in
   let t2 = insert_hash t h "second.file" in
-  size t2 = 35 (* TODO: use an expectation test instead? (Get rid of unnecessary output first!) *)
+  tree_size t2 = 35
 
 
 let%test "identify duplicates" =
@@ -228,11 +229,11 @@ let%test "identify duplicates" =
   let t = insert_hash r h "filename.ext" in
   let t2 = insert_hash t h "second.file" in
   let dups = identify_duplicate_files t2 in
-  List.length dups = 2 (* TODO: use an expectation test instead? (Get rid of unnecessary output first!) *)
+  List.length dups = 2
 
 let%test "no duplicates identified" =
   let r = createNewSpicyTree in
   let h = "368886bdc82fff1d6f8376b482ac9699" in
   let t = insert_hash r h "filename.3xt" in
   let dups = identify_duplicate_files t in
-  List.length dups = 0 (* TODO: use an expectation test instead? (Get rid of unnecessary output first!) *)
+  List.length dups = 0

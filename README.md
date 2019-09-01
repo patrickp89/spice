@@ -47,14 +47,16 @@ Spice has finished its traversal, it will simply identify all those nodes with m
 than one leaf as child, which is also done in *O*(n log n).
 
 ## How to build it
-Install [OPAM](https://opam.ocaml.org/doc/Install.html), on Debian run:
+Install and initialise [OPAM](https://opam.ocaml.org/doc/Install.html), on Debian run:
 ```bash
 # apt-get install opam
+$ opam init
+$ eval $(opam env)
 ```
 
-Then install dune and Jane Street's expectation-test library via OPAM by running:
+Then install Jane Street's dune, core, and expectation-test libraries via OPAM by running:
 ```bash
-$ opam install dune ppx_expect
+$ opam install dune core ppx_expect
 ```
 
 Clone or download this repository, and build by running
