@@ -5,7 +5,6 @@
 open Spice_lib
 open Core
 
-
 (* Concatenates a directory name d and a filename f. *)
 let full_path d f =
   Filename.concat d f
@@ -24,10 +23,10 @@ let calculate_and_insert_hash_into_tree f t =
 (* Computes a Spice tree from all files and folders in directory d. *)
 let rec compute_tree_from_files_in_dir r d =
   logg [d; ":"] ;
-  let files_in_dir = Array.to_list (Core.Sys.readdir d) in
+  let files_in_dir = Array.to_list (Sys.readdir d) in
   let absolute_files_in_dir = List.rev_map files_in_dir ~f:(fun file -> (full_path d file)) in
-  let readable_files_in_dir = List.filter absolute_files_in_dir ~f:(fun file -> (Core.Sys.file_exists file) = `Yes) in
-  let unreadable_files = List.filter absolute_files_in_dir ~f:(fun file -> not((Core.Sys.file_exists file) = `Yes)) in
+  let readable_files_in_dir = List.filter absolute_files_in_dir ~f:(fun file -> (Sys.file_exists file) = `Yes) in
+  let unreadable_files = List.filter absolute_files_in_dir ~f:(fun file -> not((Sys.file_exists file) = `Yes)) in
   logg ["I don't have permission to read the following "; string_of_int (List.length unreadable_files); " files:"];
   (* TODO: filtering unreadable files does not work! -> create a custom predicate to check for this! *)
   (List.iter unreadable_files ~f:(fun file -> (logg [" ~~> '"; file; "'"])));
@@ -41,10 +40,10 @@ let rec compute_tree_from_files_in_dir r d =
 (* Places the MD5 hash sum of file f in directory d into the Spice tree t. Returns the new tree. *)
 and handle_file f t =
   (* check whether we've got read permission: *)
-  if (Core.Sys.file_exists f) = `Yes
+  if (Sys.file_exists f) = `Yes
   then begin
     (* is this a directory or a file? *)
-    if (Core.Sys.is_directory f) = `No
+    if (Sys.is_directory f) = `No
     then begin
       logg [ " --> calculating hash for '"; f; "'..." ];
       calculate_and_insert_hash_into_tree f t
@@ -71,7 +70,7 @@ let () =
   then logg [ "Error! Not enough arguments provided!" ]
   else begin
     let dir = Sys.argv.(1) in
-    if not((Core.Sys.file_exists dir) = `Yes) || not((Core.Sys.is_directory dir) = `Yes)
+    if not((Sys.file_exists dir) = `Yes) || not((Sys.is_directory dir) = `Yes)
     then logg [ "Error! '"; dir; "' is not a directory or does not exist!" ]
     else begin
       let spice_tree = compute_tree_from_files_in_dir createNewSpicyTree dir in

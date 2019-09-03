@@ -1,4 +1,5 @@
 (library
  (name spice_lib)
+ (libraries core)
  (inline_tests)
  (preprocess (pps ppx_expect)))

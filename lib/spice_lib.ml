@@ -2,11 +2,11 @@
 * Calculates MD5 hash sums for all files in a given directory.
 *)
 
-(*open Core*)
+open Core
 
 (* Logs the concatenated string (u +...+ v) to stdout. *)
 let logg args =
-  print_endline (String.concat "" args)
+  print_endline (String.concat ~sep:"" args)
 
 (* A tree structure, where each node has n children. *)
 type ('a, 'b) spice_tree =
@@ -23,34 +23,34 @@ let createNewSpicyTree =
 let rec tree_size t =
   match t with
   | Leaf _ -> 1
-  | Node (_, children) -> 1 + (List.fold_left (fun acc x -> acc + (tree_size x)) 0 children)
+  | Node (_, children) -> 1 + (List.fold children ~init:0 ~f:(fun acc x -> acc + (tree_size x)))
 
 
 (* Checks, whether the value of a node equals x. *)
-let node_value_matches_x t x =
+let node_value_matches_x (t: (string, string) spice_tree) (x: string) : bool = (* TODO: make the type annotation generic! *)
   match t with
   | Leaf _ -> false
-  | Node(v, _) -> ((compare v x) = 0)
+  | Node(v, _) -> (v = x)
 
 
 (* Checks, whether a node has a child with value x. *)
 let exists_child_with_value_x t x =
   match t with
   | Leaf _ -> false
-  | Node(_, children) -> (List.exists (fun c -> node_value_matches_x c x) children)
+  | Node(_, children) -> (List.exists children ~f:(fun c -> node_value_matches_x c x))
 
 
 (* Searches among all of t's children, whether one with the given value x exists. Returns that child or None. *)
-let find_child_with_matching_value t x =
+let find_child_with_matching_value (t: (string, string) spice_tree) (x: string) : (string, string) spice_tree option =
   match t with
   | Leaf _ -> None
   | Node(_, children) -> begin
     match (exists_child_with_value_x t x) with (* TODO: check (List.length children)>0 and (...filter)>0 instead, if List.length is O(1)! *)
     | true -> begin
-      let children_with_matching_value = (List.filter (fun c -> node_value_matches_x c x) children) in
+      let children_with_matching_value = (List.filter children ~f:(fun c -> node_value_matches_x c x)) in
       (*let l2 = string_of_int (List.length children_with_matching_value) in*)
       (* TODO: if length of 'children_with_matching_value' is > 1, raise an exception! *)
-      Some (List.hd children_with_matching_value)
+      List.hd children_with_matching_value
     end
     | false -> None
   end
@@ -59,8 +59,8 @@ let find_child_with_matching_value t x =
 (* Inserts a new hash h into a given Spice tree t. *)
 let rec insert_hash (t: (string, string) spice_tree) (h: string) (f: string) : (string, string) spice_tree =
   if (String.length h) > 0 then begin
-    let h2 = String.sub h 1 ((String.length h) - 1) in
-    let c0 = String.sub h 0 1 in
+    let h2 = String.sub h ~pos:1 ~len:((String.length h) - 1) in
+    let c0 = String.sub h ~pos:0 ~len:1 in
     match t with
     (* all hashes have the same length (i.e. 32 characters), therefore we should never encounter a
     leaf, if String.length(h) is still greater than 0! *)
@@ -80,9 +80,8 @@ let rec insert_hash (t: (string, string) spice_tree) (h: string) (f: string) : (
       end
       (* there is a node with value hash[0] among the children: *)
       | Some matchingChild -> begin
-        (*print_endline ("  Found a child with value '" ^ c0 ^ "'"); TODO: erase! *)
         let mcwih = insert_hash matchingChild h2 f in
-        let newChildren = List.map (fun c -> if c = matchingChild then mcwih else c) children in (* TODO: use List.rev_map instead! *)
+        let newChildren = List.rev_map children ~f:(fun c -> if c = matchingChild then mcwih else c) in
         Node(v, newChildren)
       end
     end
@@ -105,7 +104,7 @@ let rec insert_hash (t: (string, string) spice_tree) (h: string) (f: string) : (
 
 (* Calculates an MD5 hash sum for a file with the full path f. *)
 let calculate_hash_for_file f =
-  Digest.to_hex (Digest.file f)
+  Md5.to_hex (Md5.digest_file_blocking f)
 
 
 (* Checks whether a given Spice tree is a leaf. *)
@@ -117,8 +116,8 @@ let is_leaf t =
 
 (* Checks whether the children of a node are leaves. *)
 let children_are_leaves trees =
-  let bools = (List.map (fun c -> (is_leaf c)) trees) in
-  let falses = (List.filter (fun b -> b = false ) bools) in
+  let bools = (List.rev_map trees ~f:(fun c -> (is_leaf c))) in
+  let falses = (List.filter bools ~f:(fun b -> b = false )) in
   (List.length falses) = 0
   (* TODO: use List.for_all instead if map+filter! *)
   (* TODO: use pipe operator! *)
@@ -139,8 +138,8 @@ let rec identify_duplicate_files (t: (string, string) spice_tree) : string list 
     if (children_are_leaves children) then begin
       if ((List.length children) > 1) then begin
         logg ["I'm node '..."; x; "' and I have duplicate children:"];
-      let leaves_as_string = (List.rev_map (fun c -> (node_to_string c)) children) in
-      (List.iter (fun c -> (logg [" -> "; c])) leaves_as_string);
+      let leaves_as_string = (List.rev_map children ~f:(fun c -> (node_to_string c))) in
+      (List.iter leaves_as_string ~f:(fun c -> (logg [" -> "; c])));
       leaves_as_string
       end
       else begin
@@ -148,7 +147,7 @@ let rec identify_duplicate_files (t: (string, string) spice_tree) : string list 
       end
     end
     else begin
-      (List.fold_left (fun acc x -> (List.rev_append (identify_duplicate_files x) acc)) [] children)
+      (List.fold children ~init:[] ~f:(fun acc x -> (List.rev_append (identify_duplicate_files x) acc)))
     end
   end
 
@@ -156,19 +155,19 @@ let rec identify_duplicate_files (t: (string, string) spice_tree) : string list 
 (* Tests: *)
 let%expect_test "tree size test with leaf only" =
   let t = Leaf("a") in
-  print_int (tree_size t) ;
+  Out_channel.output_string stdout (Int.to_string ((tree_size t)));
   [%expect {| 1 |}]
 
 
 let%expect_test "tree size test with single node" =
   let t = Node("parent", [ Node("child one", []); Node("child two", []) ]) in
-  print_int (tree_size t) ;
+  Out_channel.output_string stdout (Int.to_string ((tree_size t)));
   [%expect {| 3 |}]
 
 
 let%expect_test "tree size test with node and leaves" =
   let t = Node("root", [ Leaf("a"); Leaf("b"); Leaf("c"); Leaf("d") ]) in
-  print_int (tree_size t) ;
+  Out_channel.output_string stdout (Int.to_string ((tree_size t)));
   [%expect {| 5 |}]
 
 
@@ -176,7 +175,7 @@ let%expect_test "tree size test with multiple layers of nodes and leaves" =
   let t = Node("parent",
     [ Node("child one", [ Node("grandchild", [ Leaf("a") ]) ]);
       Node("child two", [ Leaf("b") ]) ]) in
-  print_int (tree_size t) ;
+  Out_channel.output_string stdout (Int.to_string ((tree_size t)));
   [%expect {| 6 |}]
 
 
@@ -190,7 +189,7 @@ let%expect_test "node does not have a child with a certain value" =
 
 let%expect_test "node has a child with a certain value" =
   let t = Node("parent", [ Node("abc", []); Node("ghi", []) ]) in
-  print_string (string_of_bool (exists_child_with_value_x t "abc")) ;
+  Out_channel.output_string stdout (string_of_bool (exists_child_with_value_x t "abc"));
   [%expect {| true |}]
 
 
@@ -198,13 +197,13 @@ let%expect_test "node does not have a child with a certain value (but a child ha
   let t = Node("parent",
     [ Node("abc", [ Node("def", [ Leaf("a") ]) ]);
       Node("ghi", [ Leaf("b") ]) ]) in
-  print_string (string_of_bool (exists_child_with_value_x t "def")) ;
+  Out_channel.output_string stdout (string_of_bool (exists_child_with_value_x t "def")) ;
   [%expect {| false |}]
 
 
 let%expect_test "a leaf does not contain a certain value" =
   let t = Leaf("a") in
-  print_string (string_of_bool (exists_child_with_value_x t "def")) ;
+  Out_channel.output_string stdout (string_of_bool (exists_child_with_value_x t "def")) ;
   [%expect {| false |}]
 
 
