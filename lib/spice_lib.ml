@@ -4,10 +4,6 @@
 
 open Core
 
-(* Logs the concatenated string (u +...+ v) to stdout. *)
-let logg args =
-  print_endline (String.concat ~sep:"" args)
-
 (* A tree structure, where each node has n children. *)
 type ('a, 'b) spice_tree =
   | Leaf of 'b
@@ -66,7 +62,7 @@ let rec insert_hash (t: (string, string) spice_tree) (h: string) (f: string) : (
     leaf, if String.length(h) is still greater than 0! *)
     | Leaf _ -> begin
       (* TODO: this case should never occurr => raise an exception / return Result.failure ! *)
-      print_endline ("I encountered a Leaf where a Node should be!") ; (* TODO: erase! *)
+      printf "I encountered a Leaf where a Node should be!\n"; (* TODO: erase! *)
       t
     end
     (* search the node's children for a matching child: *)
@@ -91,7 +87,7 @@ let rec insert_hash (t: (string, string) spice_tree) (h: string) (f: string) : (
     match t with
     | Leaf _ -> begin
       (* TODO: this case should never occurr => raise an exception / return Result.failure ! *)
-      print_endline ("I visited a Leaf where a Node should be!") ; (* TODO: erase! *)
+      printf "I visited a Leaf where a Node should be!\n"; (* TODO: erase! *)
       t
     end
     | Node(v, children) -> begin
@@ -137,9 +133,9 @@ let rec identify_duplicate_files (t: (string, string) spice_tree) : string list 
   | Node (x, children) -> begin
     if (children_are_leaves children) then begin
       if ((List.length children) > 1) then begin
-        logg ["I'm node '..."; x; "' and I have duplicate children:"];
+        printf "I'm node '... %s' and I have duplicate children:\n" x;
       let leaves_as_string = (List.rev_map children ~f:(fun c -> (node_to_string c))) in
-      (List.iter leaves_as_string ~f:(fun c -> (logg [" -> "; c])));
+      (List.iter leaves_as_string ~f:(fun c -> (printf " -> %s\n" c)));
       leaves_as_string
       end
       else begin
