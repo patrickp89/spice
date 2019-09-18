@@ -1,0 +1,13 @@
+dist: bionic
+language: c
+sudo: required
+before_install:
+  - sudo apt-get install -y opam ocaml m4
+install:
+  - opam init -y
+  - eval $(opam config env)
+  - opam install dune core ppx_expect -y
+script:
+  - opam --version
+  - dune --version
+  - bash build.sh

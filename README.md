@@ -1,5 +1,7 @@
 # spice
-A tool to find and manage duplicate files
+[![Build Status](https://travis-ci.org/patrickp89/spice.svg?branch=master)](https://travis-ci.org/patrickp89/spice)
+
+A tool to find and manage duplicate files.
 
 ## How does it work?
 Spice will recursively traverse the directory that the user provides and will calculate
@@ -47,24 +49,19 @@ Spice has finished its traversal, it will simply identify all those nodes with m
 than one leaf as child, which is also done in *O*(n log n).
 
 ## How to build it
-Install and initialise [OPAM](https://opam.ocaml.org/doc/Install.html), on Debian run:
+Install [OPAM](https://opam.ocaml.org/doc/Install.html), the [OCaml](https://ocaml.org/docs/install.html) compiler, and GNU m4. Then initialise OPAM. On Debian run:
 ```bash
-# apt-get install opam
+# apt-get install opam ocaml m4
 $ opam init
-$ eval $(opam env)
+$ eval $(opam config env)
 ```
 
-Then install Jane Street's dune, core, and expectation-test libraries via OPAM by running:
+Then install Jane Street's [Dune](https://dune.build/), [Core](https://opensource.janestreet.com/core/), and expectation-test libraries via OPAM by running:
 ```bash
 $ opam install dune core ppx_expect
 ```
 
 Clone or download this repository, and build by running
 ```bash
-$ dune build bin/spice.exe
-```
-
-You can run all tests via
-```bash
-$ dune runtest
+$ bash build.sh
 ```

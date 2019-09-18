@@ -98,11 +98,6 @@ let rec insert_hash (t: (string, string) spice_tree) (h: string) (f: string) : (
   end
 
 
-(* Calculates an MD5 hash sum for a file with the full path f. *)
-let calculate_hash_for_file f =
-  Md5.to_hex (Md5.digest_file_blocking f)
-
-
 (* Checks whether a given Spice tree is a leaf. *)
 let is_leaf t =
   match t with
